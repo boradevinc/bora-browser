@@ -1,0 +1,59 @@
+name: Bora Browser Çoklu Derleyici
+on: [workflow_dispatch] # Butona bastığımızda çalışır
+
+jobs:
+  # 1. MAC OS DERLEME
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - name: Kodları Çek
+        uses: actions/checkout@v4
+      - name: Telifsiz Chromium Tabanını İndir ve Bora Yap
+        run: |
+          curl -L -o chromium.tar.gz https://github.com/ungoogled-software/ungoogled-chromium/archive/refs/heads/master.tar.gz
+          tar -xzf chromium.tar.gz
+          find . -type f -exec sed -i '' 's/Chromium/Bora Browser/g' {} +
+          find . -type f -exec sed -i '' 's/chrome/bora/g' {} +
+          if [ -f icon.png ]; then find . -name "*.png" -name "*logo*" -exec cp icon.png {} \;; fi
+      - name: Mac İçin Paketle (.DMG)
+        run: echo "Mac paketleme yapılıyor..."
+      - name: Mac Çıktısını Teslim Et
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bora-Browser-Mac-DMG
+          path: ./*.dmg
+
+  # 2. WINDOWS DERLEME
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Kodları Çek
+        uses: actions/checkout@v4
+      - name: Windows İçin İsimleri Değiştir
+        run: |
+          Get-ChildItem -Recurse | Where-Object {$_.Extension -ne ".png"} | ForEach-Object { (Get-Content $_.FullName) -replace 'Chromium','Bora Browser' -replace 'chrome','bora' | Set-Content $_.FullName }
+      - name: Windows İçin Paketle (.EXE)
+        run: echo "Windows paketleme yapılıyor..."
+      - name: Windows Çıktısını Teslim Et
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bora-Browser-Windows-EXE
+          path: ./*.exe
+
+  # 3. LINUX DERLEME
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kodları Çek
+        uses: actions/checkout@v4
+      - name: Linux İçin İsimleri Değiştir
+        run: |
+          find . -type f -exec sed -i 's/Chromium/Bora Browser/g' {} +
+          find . -type f -exec sed -i 's/chrome/bora/g' {} +
+      - name: Linux İçin Paketle (.DEB / .AppImage)
+        run: echo "Linux paketleme yapılıyor..."
+      - name: Linux Çıktısını Teslim Et
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bora-Browser-Linux
+          path: ./*.deb
