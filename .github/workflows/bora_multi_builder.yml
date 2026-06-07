@@ -27,7 +27,7 @@ jobs:
             "main": "main.js",
             "scripts": {
               "pack": "electron-builder --dir",
-              "dist": "electron-builder --mac dmg --x64"
+              "dist": "electron-builder --mac dmg --x64 --publish never"
             },
             "devDependencies": {
               "electron": "^28.2.0",
