@@ -5,7 +5,7 @@ on:
 
 jobs:
   build-mac:
-    runs-on: macos-latest
+    runs-on: macos-12 # Doğrudan macOS Monterey derleme ortamı
     steps:
       - name: Kodu Klonla
         uses: actions/checkout@v4
@@ -13,42 +13,80 @@ jobs:
       - name: Node.js Kurulumu
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 20
+          cache: 'npm'
 
-      - name: Electron ile Bora Browser Paketle
+      - name: Proje Yapısını Sıfırdan Oluştur
         run: |
-          mkdir bora-app && cd bora-app
-          npm init -y
-          npm install electron electron-builder --save-dev
+          rm -rf package.json package-lock.json node_modules dist
           
-          # Hızlıca bir başlangıç kodu yazalım
-          echo 'const { app, BrowserWindow } = require("electron"); app.whenReady().then(() => { const win = new BrowserWindow({ width: 1200, height: 800, title: "Bora Browser" }); win.loadURL("https://google.com"); });' > main.js
-          
-          # package.json ayarla
-          npx json -I -f package.json -e 'this.main="main.js"'
-          npx json -I -f package.json -e 'this.scripts={"build":"electron-builder --mac"}'
-          
-          # Derle
-          npm run build
+          cat << 'EOF' > package.json
+          {
+            "name": "bora-browser",
+            "version": "1.0.0",
+            "description": "Bora Browser",
+            "main": "main.js",
+            "scripts": {
+              "pack": "electron-builder --dir",
+              "dist": "electron-builder --mac dmg --x64"
+            },
+            "devDependencies": {
+              "electron": "^28.2.0",
+              "electron-builder": "^24.9.1"
+            },
+            "build": {
+              "appId": "com.bora.browser",
+              "productName": "Bora Browser",
+              "mac": {
+                "category": "public.app-category.productivity",
+                "target": ["dmg"],
+                "identity": null,
+                "minimumDeploymentTarget": "12.0"
+              }
+            }
+          }
+          EOF
 
-      - name: Tarayıcıyı GitHub'a Yükle
+          cat << 'EOF' > main.js
+          const { app, BrowserWindow } = require('electron');
+
+          function createWindow () {
+            const win = new BrowserWindow({
+              width: 1200,
+              height: 800,
+              title: "Bora Browser",
+              webPreferences: {
+                nodeIntegration: false,
+                contextIsolation: true
+              }
+            });
+
+            win.loadURL('https://google.com');
+          }
+
+          app.whenReady().then(() => {
+            createWindow();
+
+            app.on('activate', () => {
+              if (BrowserWindow.getAllWindows().length === 0) createWindow();
+            });
+          });
+
+          app.on('window-all-closed', () => {
+            if (process.platform !== 'darwin') app.quit();
+          });
+          EOF
+
+      - name: Bağımlılıkları Kur
+        run: npm install
+
+      - name: Eksiksiz Paketleme Yap (Monterey ve Intel x64)
+        run: npm run dist
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Hazır Tarayıcıyı GitHub'a Yükle
         uses: actions/upload-artifact@v4
         with:
-          name: Bora-Browser-Mac-Guncel
-          path: bora-app/dist/*.dmg
-
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - name: Kodu Klonla
-        uses: actions/checkout@v4
-      - name: Hazırlık
-        run: echo "Windows versiyonu"
-
-  build-linux:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Kodu Klonla
-        uses: actions/checkout@v4
-      - name: Hazırlık
-        run: echo "Linux versiyonu"
+          name: Bora-Browser-Mac-Monterey
+          path: dist/*.dmg
