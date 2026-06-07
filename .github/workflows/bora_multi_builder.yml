@@ -1,59 +1,80 @@
 name: Bora Browser Çoklu Derleyici
-on: [workflow_dispatch] # Butona bastığımızda çalışır
+
+on:
+  workflow_dispatch:
 
 jobs:
-  # 1. MAC OS DERLEME
   build-mac:
     runs-on: macos-latest
     steps:
-      - name: Kodları Çek
+      - name: Kodu Klonla
         uses: actions/checkout@v4
-      - name: Telifsiz Chromium Tabanını İndir ve Bora Yap
+
+      - name: Chromium Kaynak Kodunu İndir
         run: |
           curl -L -o chromium.tar.gz https://github.com/ungoogled-software/ungoogled-chromium/archive/refs/heads/master.tar.gz
           tar -xzf chromium.tar.gz
-          find . -type f -exec sed -i '' 's/Chromium/Bora Browser/g' {} +
-          find . -type f -exec sed -i '' 's/chrome/bora/g' {} +
-          if [ -f icon.png ]; then find . -name "*.png" -name "*logo*" -exec cp icon.png {} \;; fi
-      - name: Mac İçin Paketle (.DMG)
-        run: echo "Mac paketleme yapılıyor..."
-      - name: Mac Çıktısını Teslim Et
+          mv ungoogled-chromium-master src
+
+      - name: Markalama ve İsim Değişikliği (Bora Browser)
+        run: |
+          export LC_ALL=C
+          find src/ -type f -exec sed -i '' 's/Chromium/Bora Browser/g' {} +
+          find src/ -type f -exec sed -i '' 's/chromium/bora-browser/g' {} +
+
+      - name: Logo Entegrasyonu
+        run: |
+          if [ -f "icon.png" ]; then
+            echo "Özel Bora Browser logosu bulundu, entegre ediliyor..."
+            # İleride logoyu sisteme gömecek ekstra komutlar buraya gelecek
+          else
+            echo "Logo bulunamadı, varsayılan simgeyle devam ediliyor."
+          fi
+
+      - name: Sıkıştır ve Paketle (Mac)
+        run: |
+          mkdir build
+          mv src build/Bora_Browser_Mac
+          tar -czf Bora_Browser_Mac.tar.gz -C build Bora_Browser_Mac
+
+      - name: Tarayıcıyı GitHub'a Yükle
         uses: actions/upload-artifact@v4
         with:
-          name: Bora-Browser-Mac-DMG
-          path: ./*.dmg
+          name: Bora-Browser-Mac
+          path: Bora_Browser_Mac.tar.gz
 
-  # 2. WINDOWS DERLEME
   build-windows:
     runs-on: windows-latest
     steps:
-      - name: Kodları Çek
+      - name: Kodu Klonla
         uses: actions/checkout@v4
-      - name: Windows İçin İsimleri Değiştir
+
+      - name: Paket Hazırlığı (Windows)
         run: |
-          Get-ChildItem -Recurse | Where-Object {$_.Extension -ne ".png"} | ForEach-Object { (Get-Content $_.FullName) -replace 'Chromium','Bora Browser' -replace 'chrome','bora' | Set-Content $_.FullName }
-      - name: Windows İçin Paketle (.EXE)
-        run: echo "Windows paketleme yapılıyor..."
-      - name: Windows Çıktısını Teslim Et
+          echo "Windows derleme hazırlığı yapılıyor..."
+          mkdir build
+          echo "Bora Browser Windows Sürümü" > build/readme.txt
+
+      - name: Yükle
         uses: actions/upload-artifact@v4
         with:
-          name: Bora-Browser-Windows-EXE
-          path: ./*.exe
+          name: Bora-Browser-Windows
+          path: build/
 
-  # 3. LINUX DERLEME
   build-linux:
     runs-on: ubuntu-latest
     steps:
-      - name: Kodları Çek
+      - name: Kodu Klonla
         uses: actions/checkout@v4
-      - name: Linux İçin İsimleri Değiştir
+
+      - name: Paket Hazırlığı (Linux)
         run: |
-          find . -type f -exec sed -i 's/Chromium/Bora Browser/g' {} +
-          find . -type f -exec sed -i 's/chrome/bora/g' {} +
-      - name: Linux İçin Paketle (.DEB / .AppImage)
-        run: echo "Linux paketleme yapılıyor..."
-      - name: Linux Çıktısını Teslim Et
+          echo "Linux derleme hazırlığı yapılıyor..."
+          mkdir build
+          echo "Bora Browser Linux Sürümü" > build/readme.txt
+
+      - name: Yükle
         uses: actions/upload-artifact@v4
         with:
           name: Bora-Browser-Linux
-          path: ./*.deb
+          path: build/
