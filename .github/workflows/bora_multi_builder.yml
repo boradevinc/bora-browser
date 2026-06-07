@@ -10,71 +10,45 @@ jobs:
       - name: Kodu Klonla
         uses: actions/checkout@v4
 
-      - name: Chromium Kaynak Kodunu İndir
-        run: |
-          curl -L -o chromium.tar.gz https://github.com/ungoogled-software/ungoogled-chromium/archive/refs/heads/master.tar.gz
-          tar -xzf chromium.tar.gz
-          mv ungoogled-chromium-master src
+      - name: Node.js Kurulumu
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
 
-      - name: Markalama ve İsim Değişikliği (Bora Browser)
+      - name: Electron ile Bora Browser Paketle
         run: |
-          export LC_ALL=C
-          find src/ -type f -exec sed -i '' 's/Chromium/Bora Browser/g' {} +
-          find src/ -type f -exec sed -i '' 's/chromium/bora-browser/g' {} +
-
-      - name: Logo Entegrasyonu
-        run: |
-          if [ -f "icon.png" ]; then
-            echo "Özel Bora Browser logosu bulundu, entegre ediliyor..."
-            # İleride logoyu sisteme gömecek ekstra komutlar buraya gelecek
-          else
-            echo "Logo bulunamadı, varsayılan simgeyle devam ediliyor."
-          fi
-
-      - name: Sıkıştır ve Paketle (Mac)
-        run: |
-          mkdir build
-          mv src build/Bora_Browser_Mac
-          tar -czf Bora_Browser_Mac.tar.gz -C build Bora_Browser_Mac
+          mkdir bora-app && cd bora-app
+          npm init -y
+          npm install electron electron-builder --save-dev
+          
+          # Hızlıca bir başlangıç kodu yazalım
+          echo 'const { app, BrowserWindow } = require("electron"); app.whenReady().then(() => { const win = new BrowserWindow({ width: 1200, height: 800, title: "Bora Browser" }); win.loadURL("https://google.com"); });' > main.js
+          
+          # package.json ayarla
+          npx json -I -f package.json -e 'this.main="main.js"'
+          npx json -I -f package.json -e 'this.scripts={"build":"electron-builder --mac"}'
+          
+          # Derle
+          npm run build
 
       - name: Tarayıcıyı GitHub'a Yükle
         uses: actions/upload-artifact@v4
         with:
-          name: Bora-Browser-Mac
-          path: Bora_Browser_Mac.tar.gz
+          name: Bora-Browser-Mac-Guncel
+          path: bora-app/dist/*.dmg
 
   build-windows:
     runs-on: windows-latest
     steps:
       - name: Kodu Klonla
         uses: actions/checkout@v4
-
-      - name: Paket Hazırlığı (Windows)
-        run: |
-          echo "Windows derleme hazırlığı yapılıyor..."
-          mkdir build
-          echo "Bora Browser Windows Sürümü" > build/readme.txt
-
-      - name: Yükle
-        uses: actions/upload-artifact@v4
-        with:
-          name: Bora-Browser-Windows
-          path: build/
+      - name: Hazırlık
+        run: echo "Windows versiyonu"
 
   build-linux:
     runs-on: ubuntu-latest
     steps:
       - name: Kodu Klonla
         uses: actions/checkout@v4
-
-      - name: Paket Hazırlığı (Linux)
-        run: |
-          echo "Linux derleme hazırlığı yapılıyor..."
-          mkdir build
-          echo "Bora Browser Linux Sürümü" > build/readme.txt
-
-      - name: Yükle
-        uses: actions/upload-artifact@v4
-        with:
-          name: Bora-Browser-Linux
-          path: build/
+      - name: Hazırlık
+        run: echo "Linux versiyonu"
