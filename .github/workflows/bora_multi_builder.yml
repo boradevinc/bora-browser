@@ -5,7 +5,7 @@ on:
 
 jobs:
   build-mac:
-    runs-on: macos-12 # Doğrudan macOS Monterey derleme ortamı
+    runs-on: macos-latest # GitHub'ın en hızlı ve boşta olan güncel sunucusu
     steps:
       - name: Kodu Klonla
         uses: actions/checkout@v4
@@ -41,7 +41,7 @@ jobs:
                 "category": "public.app-category.productivity",
                 "target": ["dmg"],
                 "identity": null,
-                "minimumDeploymentTarget": "12.0"
+                "minimumDeploymentTarget": "11.0"
               }
             }
           }
@@ -80,7 +80,7 @@ jobs:
       - name: Bağımlılıkları Kur
         run: npm install
 
-      - name: Eksiksiz Paketleme Yap (Monterey ve Intel x64)
+      - name: Eksiksiz Paketleme Yap (Intel x64 - Tüm Sürümler)
         run: npm run dist
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
@@ -88,5 +88,5 @@ jobs:
       - name: Hazır Tarayıcıyı GitHub'a Yükle
         uses: actions/upload-artifact@v4
         with:
-          name: Bora-Browser-Mac-Monterey
+          name: Bora-Browser-Mac-Full-Support
           path: dist/*.dmg
