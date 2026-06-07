@@ -14,7 +14,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          # Hata veren cache: 'npm' satırını buradan tamamen sildik!
 
       - name: Proje Yapısını Sıfırdan Oluştur
         run: |
@@ -41,7 +40,7 @@ jobs:
                 "category": "public.app-category.productivity",
                 "target": ["dmg"],
                 "identity": null,
-                "minimumDeploymentTarget": "11.0"
+                "minimumSystemVersion": "11.0"
               }
             }
           }
